@@ -1,34 +1,54 @@
+cmake_minimum_required(VERSION 3.24)
 
-cmake_minimum_required(VERSION 3.18)
+# Evite l'ancien module FindCUDA (supprimé) si un CMake trop récent est utilisé
+if(POLICY CMP0146)
+  cmake_policy(SET CMP0146 NEW)
+endif()
 
-project(gflip3d LANGUAGES CXX CUDA)
+project(gDel3D LANGUAGES CXX CUDA)
 
-set(CMAKE_BUILD_TYPE Debug) 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
-# Add the source files
-set(SOURCES
-GDelFlipping/src/DelaunayChecker.cpp
-GDelFlipping/src/Demo.cpp
-GDelFlipping/src/InputCreator.cpp
-GDelFlipping/src/RandGen.cpp
-GDelFlipping/src/gDel3D/GpuDelaunay.cu
-GDelFlipping/src/gDel3D/CPU/predicates.cpp
-GDelFlipping/src/gDel3D/CPU/PredWrapper.cpp
-GDelFlipping/src/gDel3D/CPU/Splaying.cpp
-GDelFlipping/src/gDel3D/CPU/Star.cpp
-GDelFlipping/src/gDel3D/GPU/KerDivision.cu
-GDelFlipping/src/gDel3D/GPU/KerPredicates.cu
-GDelFlipping/src/gDel3D/GPU/ThrustWrapper.cu
+# Toolkit officiel (headers Thrust inclus)
+find_package(CUDAToolkit REQUIRED)
+
+# Inclure les sources .cpp/.cu du dossier src
+file(GLOB_RECURSE GDEL3D_SOURCES
+  CONFIGURE_DEPENDS
+  GDelFlipping/src/*.cpp
+  GDelFlipping/src/*.cu
 )
 
-# Add the executable
-add_executable(${PROJECT_NAME} ${SOURCES})
+# Exclure fichiers Visual Studio
+list(FILTER GDEL3D_SOURCES EXCLUDE REGEX ".*\\.(vcxproj|sln)(\\.filters)?$")
 
-# Set CUDA properties
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES 60 70 80
+add_executable(gflip3d ${GDEL3D_SOURCES})
+
+target_include_directories(gflip3d PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/GDelFlipping/src
+  ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
-# Include directories if needed
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+# Compiler avec NVCC et lier le runtime CUDA
+target_link_libraries(gflip3d PRIVATE CUDA::cudart)
+
+# Détecter et cibler automatiquement l'arch du GPU
+set_target_properties(gflip3d PROPERTIES
+  CUDA_ARCHITECTURES native
+  CUDA_SEPARABLE_COMPILATION ON
+  POSITION_INDEPENDENT_CODE ON
+)
+
+# Option utile si Thrust/CUB se plaint de versions
+target_compile_definitions(gflip3d PRIVATE THRUST_IGNORE_CUB_VERSION_CHECK=1)
+
+# Eviter que CMake impose -Werror=deprecated-declarations via toolchains exotiques
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  target_compile_options(gflip3d PRIVATE -Wno-deprecated-declarations)
+endif()
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
+  target_compile_options(gflip3d PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=-fPIC>)
+endif()
