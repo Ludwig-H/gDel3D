@@ -72,8 +72,14 @@ foreach(target IN ITEMS gflip3d EdgesDelaunay3D)
     POSITION_INDEPENDENT_CODE ON
   )
 
-  # Option utile si Thrust/CUB se plaint de versions
-  target_compile_definitions(${target} PRIVATE THRUST_IGNORE_CUB_VERSION_CHECK=1)
+  # Option utile si Thrust/CUB se plaint de versions et forcer le backend C++
+  # pour les fichiers compilés avec le compilateur hôte afin d'éviter
+  # l'inclusion de CUB qui provoque des erreurs lorsqu'il n'est pas
+  # compilé par NVCC.
+  target_compile_definitions(${target} PRIVATE
+    THRUST_IGNORE_CUB_VERSION_CHECK=1
+    $<$<COMPILE_LANGUAGE:CXX>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CPP>
+  )
 
   # Eviter que CMake impose -Werror=deprecated-declarations via toolchains exotiques
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
