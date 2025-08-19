@@ -81,25 +81,14 @@ add_executable(gflip3d
   GDelFlipping/src/RandGen.cpp
 )
 
-# gdel3d_core est une bibliothèque statique dont les objets dépendent
-# les uns des autres (par exemple, GpuDelaunay.cu appelle des fonctions
-# définies dans Splaying.cpp).  Les linkers GNU ne rescannent pas une
-# archive statique par défaut, ce qui entraîne des symboles non résolus.
-# Utiliser un groupe de liens force le rescan automatique sur les
-# plateformes modernes (CMake ≥ 3.24), avec une solution de repli
-# explicite pour les versions plus anciennes.
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
-  target_link_libraries(gflip3d PRIVATE $<LINK_GROUP:RESCAN,gdel3d_core>)
-else()
-  target_link_libraries(gflip3d PRIVATE -Wl,--start-group gdel3d_core -Wl,--end-group)
-endif()
+# Les objets de gdel3d_core ont des dépendances circulaires (ex. GpuDelaunay.cu
+# appelle des fonctions de Splaying.cpp). Pour que le linker inclue chaque
+# objet pertinent de la bibliothèque statique, on force l'équivalent de
+# `--whole-archive` via l'expression générique CMake.
+target_link_libraries(gflip3d PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>)
 
 # Nouveau programme pour extraire les arêtes de la triangulation
 add_executable(EdgesDelaunay3D
   GDelFlipping/src/EdgesDelaunay3D.cpp
 )
-if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
-  target_link_libraries(EdgesDelaunay3D PRIVATE $<LINK_GROUP:RESCAN,gdel3d_core>)
-else()
-  target_link_libraries(EdgesDelaunay3D PRIVATE -Wl,--start-group gdel3d_core -Wl,--end-group)
-endif()
+target_link_libraries(EdgesDelaunay3D PRIVATE $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>)
