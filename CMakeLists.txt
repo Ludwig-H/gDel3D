@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.21)
+cmake_minimum_required(VERSION 3.18)
 
 # Evite l'ancien module FindCUDA (supprimé) si un CMake trop récent est utilisé
 if(POLICY CMP0146)
@@ -49,8 +49,25 @@ foreach(target IN ITEMS gflip3d EdgesDelaunay3D)
   target_link_libraries(${target} PRIVATE CUDA::cudart)
 
   # Détecter et cibler automatiquement l'arch du GPU
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    set(CUDA_ARCH native)
+  else()
+    execute_process(
+      COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
+      OUTPUT_VARIABLE GPU_CAP
+      RESULT_VARIABLE GPU_CAP_RESULT
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    if(GPU_CAP_RESULT EQUAL 0 AND GPU_CAP)
+      string(REPLACE "." "" CUDA_ARCH ${GPU_CAP})
+    else()
+      # Valeur par défaut raisonnable (GPU Turing)
+      set(CUDA_ARCH 75)
+    endif()
+  endif()
+
   set_target_properties(${target} PROPERTIES
-    CUDA_ARCHITECTURES native
+    CUDA_ARCHITECTURES ${CUDA_ARCH}
     CUDA_SEPARABLE_COMPILATION ON
     POSITION_INDEPENDENT_CODE ON
   )
