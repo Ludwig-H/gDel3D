@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.21)
 
 # Evite l'ancien module FindCUDA (supprimé) si un CMake trop récent est utilisé
 if(POLICY CMP0146)
