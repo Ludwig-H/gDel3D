@@ -42,8 +42,10 @@ DAMAGE.
 #pragma once
 
 #include "../CommonTypes.h"
-#include <thrust/device_malloc.h>
+#include <thrust/device_ptr.h>
 #include <thrust/gather.h>
+#include <thrust/host_vector.h>
+#include <cuda_runtime.h>
 
 ////////////////////////////////////////////////////////////////////// GPU Exact predicates
 
@@ -277,18 +279,16 @@ public:
         _capacity   = ( n == 0 ) ? 1 : n; 
         _owned      = true; 
 
-        try
+        T* rawPtr = nullptr;
+        cudaError_t err = cudaMalloc( (void**)&rawPtr, _capacity * sizeof( T ) );
+        if ( err != cudaSuccess )
         {
-            _ptr = thrust::device_malloc< T >( _capacity );
-        }
-        catch( ... )
-        {
-            // output an error message and exit
             const int OneMB = ( 1 << 20 );
-            std::cerr << "thrust::device_malloc failed to allocate " << ( sizeof( T ) * _capacity ) / OneMB << " MB!" << std::endl;
-            std::cerr << "size = " << _size << " sizeof(T) = " << sizeof( T ) << std::endl; 
+            std::cerr << "cudaMalloc failed to allocate " << ( sizeof( T ) * _capacity ) / OneMB << " MB!" << std::endl;
+            std::cerr << "size = " << _size << " sizeof(T) = " << sizeof( T ) << std::endl;
             exit( -1 );
         }
+        _ptr = thrust::device_pointer_cast( rawPtr );
 
         return;
     }

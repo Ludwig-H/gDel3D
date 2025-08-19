@@ -29,7 +29,6 @@ add_executable(gflip3d ${GDEL3D_SOURCES})
 
 target_include_directories(gflip3d PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/GDelFlipping/src
-  ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
 )
 
 # Compiler avec NVCC et lier le runtime CUDA

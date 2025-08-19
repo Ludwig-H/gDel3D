@@ -42,6 +42,7 @@ DAMAGE.
 #include "ThrustWrapper.h"
 
 #include <map>
+#include <cuda_runtime.h>
 
 #include <thrust/system/cuda/execution_policy.h>
 
@@ -113,17 +114,10 @@ public:
             // no allocation of the right size exists
             // create a new one with cuda::malloc
             // throw if cuda::malloc can't satisfy the request
-            try
+            cudaError_t err = cudaMalloc( reinterpret_cast<void**>(&result), numBytes );
+            if ( err != cudaSuccess )
             {
-                //std::cout << "CachedAllocator: no free block found; calling cudaMalloc " << numBytes << std::endl;
-
-                // allocate memory and convert cuda::pointer to raw pointer
-                result = thrust::device_malloc<char>( numBytes ).get();
-            }
-            catch( std::runtime_error &e )
-            {
-                // output an error message and exit
-                std::cerr << "thrust::device_malloc failed to allocate " << numBytes << " bytes!" << std::endl;
+                std::cerr << "cudaMalloc failed to allocate " << numBytes << " bytes!" << std::endl;
                 exit( -1 );
             }
         }
