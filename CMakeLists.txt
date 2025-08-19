@@ -30,6 +30,7 @@ add_library(gdel3d_core ${GDEL3D_CORE})
 target_include_directories(gdel3d_core PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GDelFlipping/src
 )
+target_link_libraries(gdel3d_core PUBLIC CUDA::cudart)
 
 # Détecter et cibler automatiquement l'arch du GPU
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
@@ -79,10 +80,10 @@ add_executable(gflip3d
   GDelFlipping/src/InputCreator.cpp
   GDelFlipping/src/RandGen.cpp
 )
-target_link_libraries(gflip3d PRIVATE gdel3d_core $<LINK_ONLY:CUDA::cudart>)
+target_link_libraries(gflip3d PRIVATE gdel3d_core)
 
 # Nouveau programme pour extraire les arêtes de la triangulation
 add_executable(EdgesDelaunay3D
   GDelFlipping/src/EdgesDelaunay3D.cpp
 )
-target_link_libraries(EdgesDelaunay3D PRIVATE gdel3d_core $<LINK_ONLY:CUDA::cudart>)
+target_link_libraries(EdgesDelaunay3D PRIVATE gdel3d_core)
