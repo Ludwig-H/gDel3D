@@ -59,10 +59,17 @@ endif()
 if(CUDA_ARCH GREATER CUDA_MAX_ARCH)
   set(CUDA_ARCH ${CUDA_MAX_ARCH})
 endif()
-set(CUDA_ARCH "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
+
+# Assemblage de la liste finale des architectures.
+# On fournit toujours un PTX de secours en compute 52 pour
+# éviter l'erreur "invalid device function" sur les GPU plus anciens
+# que celui utilisé lors de la compilation. Le driver pourra
+# recompiler dynamiquement ce PTX pour les architectures >= 5.2.
+set(CUDA_ARCH_NATIVE "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
+set(CUDA_ARCHITECTURES "52-virtual;${CUDA_ARCH_NATIVE}")
 
 set_target_properties(gdel3d_core PROPERTIES
-  CUDA_ARCHITECTURES "${CUDA_ARCH}"
+  CUDA_ARCHITECTURES "${CUDA_ARCHITECTURES}"
   CUDA_SEPARABLE_COMPILATION ON
   POSITION_INDEPENDENT_CODE ON
 )
