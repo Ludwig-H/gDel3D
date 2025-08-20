@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "gDel3D/GpuDelaunay.h"
-#include "gDel3D/GPU/CudaWrapper.h"
 
 int main(int argc, char **argv) {
     if (argc != 3) {
@@ -36,7 +35,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    ensureCudaDevice();
     GDelOutput output;
     GpuDel triangulator;
     triangulator.compute(points, &output);
@@ -73,4 +71,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
