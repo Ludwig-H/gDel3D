@@ -39,12 +39,12 @@ execute_process(
   RESULT_VARIABLE GPU_CAP_RESULT
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-if(GPU_CAP_RESULT EQUAL 0 AND GPU_CAP)
-  string(REPLACE "." "" CUDA_ARCH ${GPU_CAP})
-else()
-  # Valeur par défaut raisonnable (GPU Turing)
-  set(CUDA_ARCH 75)
-endif()
+# if(GPU_CAP_RESULT EQUAL 0 AND GPU_CAP)
+#   string(REPLACE "." "" CUDA_ARCH ${GPU_CAP})
+# else()
+#   # Valeur par défaut raisonnable (GPU Turing)
+set(CUDA_ARCH 75)
+# endif()
 
 # nvcc des toolkits anciens n'acceptent pas les architectures les plus récentes.
 # On limite donc l'architecture à la plus élevée prise en charge par le toolkit
