@@ -143,26 +143,6 @@ inline void cuPrintMemory( const char* inStr )
     return;
 }
 
-inline void ensureCudaDevice( int deviceIdx = 0 )
-{
-    int deviceCount = 0;
-    cudaError err = cudaGetDeviceCount( &deviceCount );
-    if ( err != cudaSuccess || deviceCount == 0 )
-    {
-        fprintf( stderr, "No CUDA-capable device detected\n" );
-        exit( -1 );
-    }
-
-    cudaDeviceProp prop;
-    CudaSafeCall( cudaGetDeviceProperties( &prop, deviceIdx ) );
-    int cc = prop.major * 10 + prop.minor;
-    if ( cc < 52 )
-    {
-        fprintf( stderr, "Compute capability %d.%d is lower than required 5.2\n", prop.major, prop.minor );
-        exit( -1 );
-    }
-}
-
 // Obtained from: C:\ProgramData\NVIDIA Corporation\GPU SDK\C\common\inc\cutil_inline_runtime.h
 // This function returns the best GPU (with maximum GFLOPS)
 inline int cutGetMaxGflopsDeviceId()
