@@ -42,6 +42,7 @@ DAMAGE.
 #include <iomanip>
 
 #include "gDel3D/GpuDelaunay.h"
+#include "gDel3D/GPU/CudaWrapper.h"
 
 #include "DelaunayChecker.h"
 #include "InputCreator.h"
@@ -58,7 +59,8 @@ GDelOutput   output;
 void summarize( int pointNum, const GDelOutput& output );
 
 int main( int argc, const char* argv[] )
-{  
+{
+    ensureCudaDevice( deviceIdx );
     CudaSafeCall( cudaSetDevice( deviceIdx ) );
     CudaSafeCall( cudaDeviceReset() );
 
