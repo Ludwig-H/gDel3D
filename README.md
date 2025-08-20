@@ -23,6 +23,11 @@ cmake --build build
 ./build/EdgesDelaunay3D  # optional edge extractor
 ```
 
+The build system automatically detects your GPU and also embeds a
+PTX fallback for compute capability 5.2. This allows the binaries to run
+on older devices and avoids runtime errors such as
+`cudaErrorInvalidDeviceFunction`.
+
 Tested on Ubuntu 22.04 with CUDA 12.5. A Visual Studio 2012 project is provided for Windows users.
 
 ## Notes
