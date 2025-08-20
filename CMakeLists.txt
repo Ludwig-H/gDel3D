@@ -26,12 +26,18 @@ file(GLOB_RECURSE GDEL3D_CORE
 list(FILTER GDEL3D_CORE EXCLUDE REGEX ".*\\.(vcxproj|sln)(\\.filters)?$")
 
 # Bibliothèque centrale contenant toutes les implémentations CPU/GPU
-add_library(gdel3d_core ${GDEL3D_CORE})
+#
+# Les exécutables finaux sont sujets à des "undefined reference" si l'on
+# empaquette ces objets dans une bibliothèque statique classique : le
+# linker omet certains fichiers requis car ils ne sont pas directement
+# référencés.  Pour éviter d'utiliser des options spécifiques comme
+# `--whole-archive`, on construit plutôt une **object library** dont les
+# objets seront directement ajoutés aux exécutables.
+add_library(gdel3d_core OBJECT ${GDEL3D_CORE})
 target_include_directories(gdel3d_core PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GDelFlipping/src
   ${CUDAToolkit_INCLUDE_DIRS}
 )
-target_link_libraries(gdel3d_core PUBLIC CUDA::cudart)
 
 # Détection et ciblage automatique de l'architecture GPU avec limitation
 execute_process(
@@ -105,22 +111,13 @@ add_executable(gflip3d
   GDelFlipping/src/DelaunayChecker.cpp
   GDelFlipping/src/InputCreator.cpp
   GDelFlipping/src/RandGen.cpp
+  $<TARGET_OBJECTS:gdel3d_core>
 )
-
-##
-# Les objets de gdel3d_core ont des dépendances circulaires (ex. GpuDelaunay.cu
-# appelle des fonctions de Splaying.cpp). Le linker omet sinon certains objets
-# de la bibliothèque statique, provoquant des "undefined reference" sur Colab.
-# Pour forcer l'inclusion de **tous** les objets, on lie la bibliothèque en
-# mode `--whole-archive` via l'expression génératrice LINK_LIBRARY.
-# Cette expression n'accepte pas de variable intermédiaire, mais pour éviter la
-# duplication on crée tout de même une variable contenant l'expression entière.
-set(GDEL3D_CORE_FULL $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>)
-
-target_link_libraries(gflip3d PRIVATE ${GDEL3D_CORE_FULL})
+target_link_libraries(gflip3d PRIVATE gdel3d_core CUDA::cudart)
 
 # Nouveau programme pour extraire les arêtes de la triangulation
 add_executable(EdgesDelaunay3D
   GDelFlipping/src/EdgesDelaunay3D.cpp
+  $<TARGET_OBJECTS:gdel3d_core>
 )
-target_link_libraries(EdgesDelaunay3D PRIVATE ${GDEL3D_CORE_FULL})
+target_link_libraries(EdgesDelaunay3D PRIVATE gdel3d_core CUDA::cudart)
