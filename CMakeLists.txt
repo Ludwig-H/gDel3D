@@ -29,6 +29,7 @@ list(FILTER GDEL3D_CORE EXCLUDE REGEX ".*\\.(vcxproj|sln)(\\.filters)?$")
 add_library(gdel3d_core ${GDEL3D_CORE})
 target_include_directories(gdel3d_core PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/GDelFlipping/src
+  ${CUDAToolkit_INCLUDE_DIRS}
 )
 target_link_libraries(gdel3d_core PUBLIC CUDA::cudart)
 
