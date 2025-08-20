@@ -40,6 +40,7 @@ DAMAGE.
 */
 
 #include "PredWrapper.h"
+#include <algorithm>
 
 void PredWrapper::init( const Point3HVec& pointVec, Point3 ptInfty )
 {
@@ -428,8 +429,8 @@ int             pi4
         {
             if ( idx[j] < idx[j - 1] )
             {
-                cuSwap( idx[j], idx[j - 1] );
-                cuSwap( ord[j], ord[j - 1] );   // Note order
+                std::swap( idx[j], idx[j - 1] );
+                std::swap( ord[j], ord[j - 1] );   // Note order
                 ++swapCount;
             }
         }
