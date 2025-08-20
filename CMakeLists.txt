@@ -61,12 +61,19 @@ if(CUDA_ARCH GREATER CUDA_MAX_ARCH)
 endif()
 
 # Assemblage de la liste finale des architectures.
-# On fournit toujours des PTX de secours en compute 37 et 52 pour
-# éviter l'erreur «invalid device function» sur les GPU plus anciens
-# que celui utilisé lors de la compilation. Le driver pourra
-# recompiler dynamiquement ces PTX pour les architectures >= 3.7.
+# Des PTX de secours sont ajoutés pour les GPU plus anciens si le
+# toolkit les prend en charge, afin d'éviter l'erreur «invalid device
+# function». Le driver pourra les recompiler dynamiquement si besoin.
 set(CUDA_ARCH_NATIVE "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
-set(CUDA_ARCHITECTURES "37-virtual;52-virtual;${CUDA_ARCH_NATIVE}")
+set(PTX_FALLBACKS "")
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.0)
+  list(APPEND PTX_FALLBACKS 37-virtual)
+endif()
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 12.0)
+  list(APPEND PTX_FALLBACKS 52-virtual)
+endif()
+set(CUDA_ARCHITECTURES ${PTX_FALLBACKS})
+list(APPEND CUDA_ARCHITECTURES ${CUDA_ARCH_NATIVE})
 
 set_target_properties(gdel3d_core PROPERTIES
   CUDA_ARCHITECTURES "${CUDA_ARCHITECTURES}"
