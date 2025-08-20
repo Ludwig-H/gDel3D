@@ -32,8 +32,9 @@ target_include_directories(gdel3d_core PUBLIC
 )
 target_link_libraries(gdel3d_core PUBLIC CUDA::cudart)
 
-# Détecter et cibler automatiquement l'arch du GPU
+# Détection et ciblage automatique de l'architecture GPU
 if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+  # L'option "native" laisse CMake choisir une arch supportée par le toolkit
   set(CUDA_ARCH native)
 else()
   execute_process(
@@ -48,10 +49,25 @@ else()
     # Valeur par défaut raisonnable (GPU Turing)
     set(CUDA_ARCH 75)
   endif()
+
+  # nvcc des toolkits < 11.8 n'acceptent pas encore sm_89 (Ada). On limite
+  # donc l'architecture à la plus élevée prise en charge et on fournit un PTX
+  # de secours pour permettre la recompilation JIT sur des GPU plus récents.
+  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.8)
+    set(CUDA_MAX_ARCH 86)
+  else()
+    set(CUDA_MAX_ARCH 89)
+  endif()
+  if(NOT CUDA_ARCH STREQUAL "native")
+    if(CUDA_ARCH GREATER CUDA_MAX_ARCH)
+      set(CUDA_ARCH ${CUDA_MAX_ARCH})
+    endif()
+    set(CUDA_ARCH "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
+  endif()
 endif()
 
 set_target_properties(gdel3d_core PROPERTIES
-  CUDA_ARCHITECTURES ${CUDA_ARCH}
+  CUDA_ARCHITECTURES "${CUDA_ARCH}"
   CUDA_SEPARABLE_COMPILATION ON
   POSITION_INDEPENDENT_CODE ON
 )
