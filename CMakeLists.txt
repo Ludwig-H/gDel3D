@@ -66,7 +66,7 @@ endif()
 # toolkit les prend en charge, afin d'éviter l'erreur «invalid device
 # function». Le driver pourra les recompiler dynamiquement si besoin.
 set(CUDA_ARCH_NATIVE "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
-set(PTX_FALLBACKS "")
+set(PTX_FALLBACKS ${CUDA_MAX_ARCH})
 if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.0)
   list(APPEND PTX_FALLBACKS 37-virtual)
 endif()
