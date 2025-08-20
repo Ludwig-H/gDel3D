@@ -32,39 +32,34 @@ target_include_directories(gdel3d_core PUBLIC
 )
 target_link_libraries(gdel3d_core PUBLIC CUDA::cudart)
 
-# Détection et ciblage automatique de l'architecture GPU
-if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
-  # L'option "native" laisse CMake choisir une arch supportée par le toolkit
-  set(CUDA_ARCH native)
+# Détection et ciblage automatique de l'architecture GPU avec limitation
+execute_process(
+  COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
+  OUTPUT_VARIABLE GPU_CAP
+  RESULT_VARIABLE GPU_CAP_RESULT
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+if(GPU_CAP_RESULT EQUAL 0 AND GPU_CAP)
+  string(REPLACE "." "" CUDA_ARCH ${GPU_CAP})
 else()
-  execute_process(
-    COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
-    OUTPUT_VARIABLE GPU_CAP
-    RESULT_VARIABLE GPU_CAP_RESULT
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  if(GPU_CAP_RESULT EQUAL 0 AND GPU_CAP)
-    string(REPLACE "." "" CUDA_ARCH ${GPU_CAP})
-  else()
-    # Valeur par défaut raisonnable (GPU Turing)
-    set(CUDA_ARCH 75)
-  endif()
-
-  # nvcc des toolkits < 11.8 n'acceptent pas encore sm_89 (Ada). On limite
-  # donc l'architecture à la plus élevée prise en charge et on fournit un PTX
-  # de secours pour permettre la recompilation JIT sur des GPU plus récents.
-  if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.8)
-    set(CUDA_MAX_ARCH 86)
-  else()
-    set(CUDA_MAX_ARCH 89)
-  endif()
-  if(NOT CUDA_ARCH STREQUAL "native")
-    if(CUDA_ARCH GREATER CUDA_MAX_ARCH)
-      set(CUDA_ARCH ${CUDA_MAX_ARCH})
-    endif()
-    set(CUDA_ARCH "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
-  endif()
+  # Valeur par défaut raisonnable (GPU Turing)
+  set(CUDA_ARCH 75)
 endif()
+
+# nvcc des toolkits anciens n'acceptent pas les architectures les plus récentes.
+# On limite donc l'architecture à la plus élevée prise en charge par le toolkit
+# et on fournit un PTX de secours pour permettre la recompilation JIT.
+if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.8)
+  set(CUDA_MAX_ARCH 86)
+elseif(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 12.0)
+  set(CUDA_MAX_ARCH 89)
+else()
+  set(CUDA_MAX_ARCH 90)
+endif()
+if(CUDA_ARCH GREATER CUDA_MAX_ARCH)
+  set(CUDA_ARCH ${CUDA_MAX_ARCH})
+endif()
+set(CUDA_ARCH "${CUDA_ARCH}-real;${CUDA_ARCH}-virtual")
 
 set_target_properties(gdel3d_core PROPERTIES
   CUDA_ARCHITECTURES "${CUDA_ARCH}"
