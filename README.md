@@ -2,7 +2,7 @@
 
 gDel3D constructs the Delaunay Triangulation of a set of points in 3D on the GPU. This repository refactors the original code so it compiles on recent CUDA toolkits and architectures.
 
-Original repository: https://github.com/ashwin/gDel3D
+Original repositories: https://github.com/ashwin/gDel3D and https://github.com/imanf94/gDel3D
 
 ## Programs
 
