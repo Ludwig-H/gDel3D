@@ -81,20 +81,20 @@ add_executable(gflip3d
   GDelFlipping/src/RandGen.cpp
 )
 
+##
 # Les objets de gdel3d_core ont des dépendances circulaires (ex. GpuDelaunay.cu
 # appelle des fonctions de Splaying.cpp). Le linker omet sinon certains objets
 # de la bibliothèque statique, provoquant des "undefined reference" sur Colab.
-# On utilise la génératrice "LINK_LIBRARY" pour entourer automatiquement la
-# bibliothèque avec les options `--whole-archive`/`--no-whole-archive` de façon
-# portable afin que tous les symboles soient conservés.
-target_link_libraries(gflip3d PRIVATE
-  $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>
-)
+# Pour forcer l'inclusion de **tous** les objets, on lie la bibliothèque en
+# mode `--whole-archive` via l'expression génératrice LINK_LIBRARY.
+# Cette expression n'accepte pas de variable intermédiaire, mais pour éviter la
+# duplication on crée tout de même une variable contenant l'expression entière.
+set(GDEL3D_CORE_FULL $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>)
+
+target_link_libraries(gflip3d PRIVATE ${GDEL3D_CORE_FULL})
 
 # Nouveau programme pour extraire les arêtes de la triangulation
 add_executable(EdgesDelaunay3D
   GDelFlipping/src/EdgesDelaunay3D.cpp
 )
-target_link_libraries(EdgesDelaunay3D PRIVATE
-  $<LINK_LIBRARY:WHOLE_ARCHIVE,gdel3d_core>
-)
+target_link_libraries(EdgesDelaunay3D PRIVATE ${GDEL3D_CORE_FULL})
