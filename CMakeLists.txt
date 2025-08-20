@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-# Eviter FindCUDA obsolète
+# Eviter FindCUDA obsolète sur CMake récents
 if(POLICY CMP0146)
   cmake_policy(SET CMP0146 NEW)
 endif()
@@ -8,8 +8,8 @@ endif()
 project(gDel3D LANGUAGES CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 find_package(CUDAToolkit REQUIRED)
@@ -24,11 +24,12 @@ file(GLOB_RECURSE GDEL3D_CORE
 )
 list(FILTER GDEL3D_CORE EXCLUDE REGEX ".*\\.(vcxproj|sln)(\\.filters)?$")
 
-# Ces CPP définissent des fonctions appelées depuis des .cu avec thrust::host_vector
-# On les compile aussi via NVCC pour aligner l’ABI Thrust côté device.
+# Ces TU C++ exposent des fonctions appelées depuis des .cu avec des types Thrust:
+# on les compile via NVCC pour aligner l'ABI Thrust.
 set(CUDA_HOST_BRIDGE_CPP
   GDelFlipping/src/gDel3D/CPU/PredWrapper.cpp
   GDelFlipping/src/gDel3D/CPU/Splaying.cpp
+  GDelFlipping/src/gDel3D/CPU/Star.cpp
 )
 foreach(f ${CUDA_HOST_BRIDGE_CPP})
   if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${f})
@@ -37,7 +38,7 @@ foreach(f ${CUDA_HOST_BRIDGE_CPP})
 endforeach()
 
 # ------------------------------------------------------------------------------
-# Détection d’arch + PTX fallback
+# Détection d'arch + PTX fallback
 # ------------------------------------------------------------------------------
 execute_process(
   COMMAND nvidia-smi --query-gpu=compute_cap --format=csv,noheader
@@ -74,7 +75,7 @@ endif()
 message(STATUS "CUDA architectures: ${CUDA_ARCHITECTURES}")
 
 # ------------------------------------------------------------------------------
-# Lib objet
+# Lib objet (évite les symboles perdus au link)
 # ------------------------------------------------------------------------------
 add_library(gdel3d_core OBJECT ${GDEL3D_CORE})
 target_include_directories(gdel3d_core PUBLIC
@@ -87,11 +88,14 @@ set_target_properties(gdel3d_core PROPERTIES
   CUDA_SEPARABLE_COMPILATION ON
 )
 
-# Unifier Thrust: host=CPP, device=CUDA PARTOUT (CXX et CUDA)
+# Unifier Thrust correctement:
+# - CXX -> device system = CPP (sinon CUB tente d'inclure des intrinsics)
+# - CUDA -> device system = CUDA
 target_compile_definitions(gdel3d_core PUBLIC
   THRUST_IGNORE_CUB_VERSION_CHECK=1
   THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP
-  THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA
+  $<$<COMPILE_LANGUAGE:CXX>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CPP>
+  $<$<COMPILE_LANGUAGE:CUDA>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA>
 )
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -126,7 +130,8 @@ set_target_properties(gflip3d PROPERTIES
 target_compile_definitions(gflip3d PRIVATE
   THRUST_IGNORE_CUB_VERSION_CHECK=1
   THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP
-  THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA
+  $<$<COMPILE_LANGUAGE:CXX>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CPP>
+  $<$<COMPILE_LANGUAGE:CUDA>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA>
 )
 
 add_executable(EdgesDelaunay3D
@@ -146,5 +151,6 @@ set_target_properties(EdgesDelaunay3D PROPERTIES
 target_compile_definitions(EdgesDelaunay3D PRIVATE
   THRUST_IGNORE_CUB_VERSION_CHECK=1
   THRUST_HOST_SYSTEM=THRUST_HOST_SYSTEM_CPP
-  THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA
+  $<$<COMPILE_LANGUAGE:CXX>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CPP>
+  $<$<COMPILE_LANGUAGE:CUDA>:THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA>
 )
