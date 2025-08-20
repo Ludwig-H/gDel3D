@@ -64,9 +64,9 @@ if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.0)
   list(PREPEND CUDA_ARCHITECTURES 37-virtual)
 endif()
 if(CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 12.0)
-  list(PREPEND CUDA_ARCHITECTURES 52-virtual)
+  list(PREPEND CUDA_ARCHITECTURES 60-virtual)
 endif()
-
+set(CMAKE_CUDA_ARCHITECTURES "${CUDA_ARCHITECTURES}" CACHE STRING "" FORCE)
 message(STATUS "CUDA architectures: ${CUDA_ARCHITECTURES}")
 
 # ---------------------------------------------------------------------------
