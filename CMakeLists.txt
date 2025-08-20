@@ -114,6 +114,10 @@ add_executable(gflip3d
   $<TARGET_OBJECTS:gdel3d_core>
 )
 target_link_libraries(gflip3d PRIVATE gdel3d_core CUDA::cudart)
+set_target_properties(gflip3d PROPERTIES
+  LINKER_LANGUAGE CUDA
+  CUDA_SEPARABLE_COMPILATION ON
+)
 
 # Nouveau programme pour extraire les arêtes de la triangulation
 add_executable(EdgesDelaunay3D
@@ -121,3 +125,7 @@ add_executable(EdgesDelaunay3D
   $<TARGET_OBJECTS:gdel3d_core>
 )
 target_link_libraries(EdgesDelaunay3D PRIVATE gdel3d_core CUDA::cudart)
+set_target_properties(EdgesDelaunay3D PROPERTIES
+  LINKER_LANGUAGE CUDA
+  CUDA_SEPARABLE_COMPILATION ON
+)
